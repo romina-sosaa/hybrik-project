@@ -6,17 +6,10 @@ import {
 } from "@aws-sdk/client-transcribe";
 
 import fs from "fs";
-import { awsConfig } from "../awsConfig"; 
 
-export const transcriptionJob = async (fileName: string, outputPath: string) => {
+export const transcriptionJob = async (fileName: string, outputPath: string, bucketName: string) => {
 
-  const transcribeClient = new TranscribeClient({
-    region: awsConfig.region,
-    credentials: {
-      accessKeyId: awsConfig.accessKeyId,
-      secretAccessKey: awsConfig.secretAccessKey,
-    },
-  });
+  const transcribeClient = new TranscribeClient();
 
   const jobName = `${fileName}_transcription`
 
@@ -25,7 +18,7 @@ export const transcriptionJob = async (fileName: string, outputPath: string) => 
     LanguageCode: "en-US",
     MediaFormat: "mp4",
     Media: {
-      MediaFileUri: `https://${awsConfig.bucketName}.s3.amazonaws.com/${fileName}`,
+      MediaFileUri: `https://${bucketName}.s3.amazonaws.com/${fileName}`,
     },
     Subtitles: {
       Formats: ["srt", "vtt"],
@@ -65,7 +58,7 @@ export const transcriptionJob = async (fileName: string, outputPath: string) => 
         const srtUrl = subtitles[0];
         const srtResponse = await fetch(srtUrl);
         const srtContent = await srtResponse.text();
-        const srtFilePath = `${outputPath}\\${jobName}.srt`;
+        const srtFilePath = `${outputPath}\\subtitles.srt`;
         fs.writeFileSync(srtFilePath, srtContent);
       }
 
@@ -74,7 +67,7 @@ export const transcriptionJob = async (fileName: string, outputPath: string) => 
         const vttUrl = subtitles[1];
         const vttResponse = await fetch(vttUrl);
         const vttContent = await vttResponse.text();
-        const vttFilePath = `${outputPath}\\${jobName}.vtt`;
+        const vttFilePath = `${outputPath}\\subtitles.vtt`;
         fs.writeFileSync(vttFilePath, vttContent);
       }
     }

@@ -1,16 +1,14 @@
 import { RekognitionClient, StartSegmentDetectionCommand, GetSegmentDetectionCommand, StartSegmentDetectionCommandInput } from "@aws-sdk/client-rekognition";
-import { awsConfig } from "../awsConfig"; 
 import fs from "fs";
 import path from "path";
 
-export const detectTechnicalCues = async (fileName:string, outputPath: string) => {
-
+export const rekognitionJob = async (fileName:string, outputPath: string, bucketName: string) => {
   const rekognitionClient = new RekognitionClient();
 
   const params: StartSegmentDetectionCommandInput = {
     Video: {
       S3Object: {
-        Bucket: awsConfig.bucketName,
+        Bucket: bucketName,
         Name: fileName,
       },
     },
@@ -41,7 +39,7 @@ export const detectTechnicalCues = async (fileName:string, outputPath: string) =
       throw new Error("Segment detection job failed.");
     }
 
-    const outputFilePath = path.join(outputPath, `${fileName}_segment_detected.json`);
+    const outputFilePath = `${outputPath}video_segment_detected.json`;
 
     fs.writeFileSync(outputFilePath, JSON.stringify(rekognitionResponse, null, 2));
     console.log("The rekognition job was succeed");

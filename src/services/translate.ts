@@ -1,17 +1,9 @@
 import { TranslateClient, TranslateTextCommand } from "@aws-sdk/client-translate";
 import fs from "fs";
-import { awsConfig } from "../awsConfig"; 
-import path from "path";
 
-export const translateJob = async (inputPath: string, outputPath:string) => {
+export const translateJob = async (inputPath: string, outputPath:string, targetLanguage: string) => {
 
-  const translateClient = new TranslateClient({
-    region: awsConfig.region,
-    credentials: {
-      accessKeyId: awsConfig.accessKeyId,
-      secretAccessKey: awsConfig.secretAccessKey,
-    },
-  });
+  const translateClient = new TranslateClient();
 
   // Read the VTT file
   const vttContent = fs.readFileSync(inputPath, "utf-8");
@@ -19,7 +11,7 @@ export const translateJob = async (inputPath: string, outputPath:string) => {
   const params = { 
     Text: vttContent,
     SourceLanguageCode: "en",
-    TargetLanguageCode: "es",
+    TargetLanguageCode: targetLanguage,
   };
 
   try {
