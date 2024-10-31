@@ -5,19 +5,16 @@ import {
     GetObjectCommand,
     NoSuchKey,
   } from "@aws-sdk/client-s3";
-  
-import { readFile } from "fs/promises";
 
 const { writeFile } = require("node:fs/promises");
 
-const createS3Client = () => new S3Client();
+export const uploadFiles = async (fileName: string, content: string, bucketName: string) => {
+    const client = new S3Client({region: 'us-east-2'});
 
-export const uploadFiles = async (fileName: string, inputPath: string, bucketName: string) => {
-    const client = createS3Client();
     const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: fileName,
-        Body: await readFile(inputPath),
+        Body: content,
     });
 
     try {
@@ -39,10 +36,7 @@ export const downloadFiles = async (key: string, outputPath: string, bucketName:
         }),
       );
       if (response.Body) {
-        // const content = await response.Body.transformToString();
-
         await writeFile(path, response.Body);
-        // console.log("Retrieved content:", content);
       } else {
         console.error('No content found');
       }
@@ -73,5 +67,3 @@ const handleS3Error = (error: any, action: string, key: string, bucketName: stri
         throw error;
     }
 };
-
-

@@ -1,15 +1,20 @@
 import { TranslateClient, TranslateTextCommand } from "@aws-sdk/client-translate";
-import fs from "fs";
+import fs from 'fs';
 
-export const translateJob = async (inputPath: string, outputPath:string, targetLanguage: string) => {
+export const translateJob = async (vttOutput: string, targetLanguage: string, translatedOutput: string) => {
 
-  const translateClient = new TranslateClient();
+  const translateClient = new TranslateClient({region: 'us-east-2'});
+  let subtitles = '';
 
-  // Read the VTT file
-  const vttContent = fs.readFileSync(inputPath, "utf-8");
+  try {
+  const data = fs.readFileSync(vttOutput, "utf-8");
+  subtitles = data;
+  } catch (err) {
+    console.error(err);
+  }
 
   const params = { 
-    Text: vttContent,
+    Text: subtitles,
     SourceLanguageCode: "en",
     TargetLanguageCode: targetLanguage,
   };
@@ -21,13 +26,12 @@ export const translateJob = async (inputPath: string, outputPath:string, targetL
 
     // Get the translated text
     const translatedText = translateResponse.TranslatedText;
-    const outputFilePath = `${outputPath}_translated.vtt`;
 
     if (typeof translatedText !== 'string') {
         throw new Error("Error: The translate is not valid.");
       }
 
-    fs.writeFileSync(outputFilePath, translatedText, "utf-8");
+    fs.writeFileSync(translatedOutput, translatedText);
     console.log("The translate job was succeed");
 
   } catch (error) {

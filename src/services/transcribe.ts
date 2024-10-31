@@ -7,11 +7,9 @@ import {
 
 import fs from "fs";
 
-export const transcriptionJob = async (fileName: string, outputPath: string, bucketName: string) => {
-
-  const transcribeClient = new TranscribeClient();
-
-  const jobName = `${fileName}_transcription`
+export const transcriptionJob = async (vttOutput: string, fileName: string, bucketName: string) => {
+  const transcribeClient = new TranscribeClient({region: 'us-east-2'});
+  const jobName = `${fileName}_transcription`;
 
   const params: StartTranscriptionJobCommandInput = {
     TranscriptionJobName: jobName,
@@ -29,9 +27,9 @@ export const transcriptionJob = async (fileName: string, outputPath: string, buc
     // Start the transcription job
     const startCommand = new StartTranscriptionJobCommand(params);
     await transcribeClient.send(startCommand);
-    console.log('The transcription work began')
+    console.log('The transcription work began');
 
-    // Get the transcription command
+    // Get the transcription job status
     const command = new GetTranscriptionJobCommand({ TranscriptionJobName: jobName });
     let transcribeResponse = await transcribeClient.send(command);
 
@@ -39,10 +37,10 @@ export const transcriptionJob = async (fileName: string, outputPath: string, buc
 
     // Wait until the transcription finishes
     while (jobStatus === "IN_PROGRESS") {
+      await new Promise(resolve => setTimeout(resolve, 5000));
       transcribeResponse = await transcribeClient.send(command);
       jobStatus = transcribeResponse.TranscriptionJob?.TranscriptionJobStatus;
-      console.log('status', jobStatus)
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      console.log('status', jobStatus);
     }
 
     if (jobStatus === "FAILED") {
@@ -52,29 +50,32 @@ export const transcriptionJob = async (fileName: string, outputPath: string, buc
     transcribeResponse = await transcribeClient.send(command);
     const subtitles = transcribeResponse.TranscriptionJob?.Subtitles?.SubtitleFileUris;
 
+    let srtContent = '';
+    let vttContent = '';
+
     if (subtitles) {
       // Save SRT subtitles
       if (subtitles.length > 0) {
         const srtUrl = subtitles[0];
         const srtResponse = await fetch(srtUrl);
-        const srtContent = await srtResponse.text();
-        const srtFilePath = `${outputPath}\\subtitles.srt`;
-        fs.writeFileSync(srtFilePath, srtContent);
+        const x = await srtResponse.text();
+        if (x) srtContent = x
+        // fs.writeFileSync(vttOutput, srtContent);
       }
 
       // Save VTT subtitles
       if (subtitles.length > 1) {
         const vttUrl = subtitles[1];
         const vttResponse = await fetch(vttUrl);
-        const vttContent = await vttResponse.text();
-        const vttFilePath = `${outputPath}\\subtitles.vtt`;
-        fs.writeFileSync(vttFilePath, vttContent);
+        const x = await vttResponse.text();
+        if (x) vttContent = x
+        fs.writeFileSync(vttOutput, vttContent);
       }
     }
     
-    console.log("The trancribe job was succeed");
+    console.log("The transcription job succeeded");
 
   } catch (err) {
-      console.log("Error", err);
+    console.log("Error", err);
   }
 };
